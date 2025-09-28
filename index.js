@@ -89,7 +89,7 @@ async function checkAuth(auth){
         let credentials = Buffer.from(auth, 'base64').toString();
         logToFile(`Decoded Credentials: ${credentials}\n`);
         credentials = credentials.split(':');
-        return ( credentials[0] == 'metwally' && credentials[1] == 'VeryStrongPassword' );
+        return ( credentials[0] == 'omar' && credentials[1] == 'VeryStrongPassword' );
 
     } else if(auth.startsWith('Bearer ')){
         auth = auth.replace('Bearer ', '');
