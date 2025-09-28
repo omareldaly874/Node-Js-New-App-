@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "omareldaly/newappnodejs"
+        QC_SERVER = "172.31.20.145"
+        PROD_SERVER = "172.31.21.221"
+        APP_NAME = "NodeJs_app"
+    }
+
+    stages {
+        stage("Checkout Code") {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'github',
+                    url: 'https://github.com/omareldaly874/Node-Js-New-App-.git'
+            }
+        }
+
+        stage('Build & Push') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                        sh """
+                          docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                          echo "$PASS" | docker login -u "$USER" --password-stdin
+                          docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to QC') {
+            steps {
+                sshagent (credentials: ['ssh-devops-qc']) {
+                    sh """
+                      ssh -o StrictHostKeyChecking=no deploy@${QC_SERVER} \\
+                        "docker pull ${IMAGE_NAME}:${BUILD_NUMBER} && \\
+                         docker stop ${APP_NAME} || true && \\
+                         docker rm ${APP_NAME} || true && \\
+                         docker run -d --name ${APP_NAME} -p 8000:8000 ${IMAGE_NAME}:${BUILD_NUMBER} && \\
+                         docker image prune -f"
+                    """
+                }
+            }
+        }
+
+        stage('Approval for Production') {
+            steps {
+                input message: "Wh؟", ok: "Yes, Deploy"
+            }
+        }
+
+        stage('Deploy to Prod') {
+            steps {
+                sshagent (credentials: ['ssh-devops-prod']) {
+                    sh """
+                      ssh -o StrictHostKeyChecking=no deploy@${PROD_SERVER} \\
+                        "docker pull ${IMAGE_NAME}:${BUILD_NUMBER} && \\
+                         docker stop ${APP_NAME} || true && \\
+                         docker rm ${APP_NAME} || true && \\
+                         docker run -d --name ${APP_NAME} -p 8000:8000 ${IMAGE_NAME}:${BUILD_NUMBER} && \\
+                         docker image prune -f"
+                    """
+                }
+            }
+        }
+    }
+}
