@@ -29,3 +29,4 @@ The goal is to automate the build, test, and deployment process for faster and m
 - Scalable and reliable infrastructure on AWS  
 
 ---
+<img width="1884" height="681" alt="devops drawio" src="https://github.com/user-attachments/assets/a1ceaf51-a415-4a2f-a13c-ba817ff205f8" />
